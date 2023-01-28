@@ -509,7 +509,7 @@ uiWindow *uiNewWindow(const char *title, int width, int height, int hasMenubar, 
 		hasMenubarBOOL = TRUE;
 	w->hasMenubar = hasMenubarBOOL;
 
-#define style WS_OVERLAPPEDWINDOW
+#define style (WS_OVERLAPPEDWINDOW & ~WS_MINIMIZEBOX & ~WS_MAXIMIZEBOX & ~WS_THICKFRAME)
 #define exstyle 0
 
 	wtitle = toUTF16(title);
