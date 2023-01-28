@@ -495,7 +495,7 @@ static void setClientSize(uiWindow *w, int width, int height, BOOL hasMenubar, D
 		logLastError(L"error resizing window");
 }
 
-uiWindow *uiNewWindow(const char *title, int width, int height, int hasMenubar)
+uiWindow *uiNewWindow(const char *title, int width, int height, int hasMenubar, HWND hWndParent)
 {
 	uiWindow *w;
 	WCHAR *wtitle;
@@ -521,7 +521,7 @@ uiWindow *uiNewWindow(const char *title, int width, int height, int hasMenubar)
 		// this will get CW_USEDEFAULT (hopefully) predicting well
 		// even if it doesn't, we're adjusting it later
 		width, height,
-		NULL, NULL, hInstance, w);
+		hWndParent, NULL, hInstance, w);
 	if (w->hwnd == NULL)
 		logLastError(L"error creating window");
 	uiprivFree(wtitle);

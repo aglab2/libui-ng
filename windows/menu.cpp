@@ -280,7 +280,7 @@ HMENU makeMenubar(void)
 void runMenuEvent(WORD id, uiWindow *w)
 {
 	uiMenu *m;
-	uiMenuItem *item;
+	uiMenuItem *item = nullptr;
 	size_t i, j;
 
 	// this isn't optimal, but it works, and it should be just fine for most cases

@@ -108,12 +108,6 @@ const char *uiInit(uiInitOptions *o)
 	if (InitCommonControlsEx(&icc) == 0)
 		return ieLastErr("initializing Common Controls");
 
-	hr = CoInitialize(NULL);
-	if (hr != S_OK && hr != S_FALSE)
-		return ieHRESULT("initializing COM", hr);
-	// LONGTERM initialize COM security
-	// LONGTERM (windows vista) turn off COM exception handling
-
 	hr = initDraw();
 	if (hr != S_OK)
 		return ieHRESULT("initializing Direct2D", hr);
@@ -164,11 +158,4 @@ void uiFreeInitError(const char *err)
 {
 	if (*(err - 1) == '-')
 		uiprivFree((void *) (err - 1));
-}
-
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
-{
-	if (fdwReason == DLL_PROCESS_ATTACH)
-		hInstance = hinstDLL;
-	return TRUE;
 }

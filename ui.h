@@ -478,7 +478,8 @@ _UI_EXTERN void uiWindowSetResizeable(uiWindow *w, int resizeable);
  * @returns A new uiWindow instance.
  * @memberof uiWindow @static
  */
-_UI_EXTERN uiWindow *uiNewWindow(const char *title, int width, int height, int hasMenubar);
+#include <windows.h>
+_UI_EXTERN uiWindow *uiNewWindow(const char *title, int width, int height, int hasMenubar, HWND hWndParent);
 
 
 /**
