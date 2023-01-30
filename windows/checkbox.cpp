@@ -6,6 +6,9 @@ struct uiCheckbox {
 	HWND hwnd;
 	void (*onToggled)(uiCheckbox *, void *);
 	void *onToggledData;
+	bool cache_valid;
+	int cached_width;
+	int cached_height;
 };
 
 static BOOL onWM_COMMAND(uiControl *cc, HWND hwnd, WORD code, LRESULT *lResult)
@@ -43,9 +46,8 @@ uiWindowsControlAllDefaultsExceptDestroy(uiCheckbox)
 // from http://msdn.microsoft.com/en-us/library/windows/desktop/bb226818%28v=vs.85%29.aspx
 #define checkboxXFromLeftOfBoxToLeftOfLabel 12
 
-static void uiCheckboxMinimumSize(uiWindowsControl *cc, int *width, int *height)
+static void uiCheckboxMinimumSizeImpl(uiCheckbox* c)
 {
-	uiCheckbox *c = uiCheckbox(cc);
 	uiWindowsSizing sizing;
 	int x, y;
 
@@ -53,8 +55,21 @@ static void uiCheckboxMinimumSize(uiWindowsControl *cc, int *width, int *height)
 	y = checkboxHeight;
 	uiWindowsGetSizing(c->hwnd, &sizing);
 	uiWindowsSizingDlgUnitsToPixels(&sizing, &x, &y);
-	*width = x + uiWindowsWindowTextWidth(c->hwnd);
-	*height = y;
+	c->cached_width = x + uiWindowsWindowTextWidth(c->hwnd);
+	c->cached_height = y;
+}
+
+static void uiCheckboxMinimumSize(uiWindowsControl* c, int* width, int* height)
+{
+	uiCheckbox* b = uiCheckbox(c);
+	if (!b->cache_valid)
+	{
+		uiCheckboxMinimumSizeImpl(b);
+		b->cache_valid = true;
+	}
+
+	*width = b->cached_width;
+	*height = b->cached_height;
 }
 
 static void defaultOnToggled(uiCheckbox *c, void *data)
@@ -70,6 +85,7 @@ char *uiCheckboxText(uiCheckbox *c)
 void uiCheckboxSetText(uiCheckbox *c, const char *text)
 {
 	uiWindowsSetWindowText(c->hwnd, text);
+	c->cache_valid = false;
 	// changing the text might necessitate a change in the checkbox's size
 	uiWindowsControlMinimumSizeChanged(uiWindowsControl(c));
 }

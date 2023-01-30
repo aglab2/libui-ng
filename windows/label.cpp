@@ -4,21 +4,36 @@
 struct uiLabel {
 	uiWindowsControl c;
 	HWND hwnd;
+	bool cache_valid;
+	int cached_width;
+	int cached_height;
 };
 
 uiWindowsControlAllDefaults(uiLabel)
 
-static void uiLabelMinimumSize(uiWindowsControl *c, int *width, int *height)
+static void uiLabelMinimumSizeImpl(uiLabel* l)
 {
-	uiLabel *l = uiLabel(c);
 	uiWindowsSizing sizing;
 	int y;
 
-	*width = uiWindowsWindowTextWidth(l->hwnd);
+	l->cached_width = uiWindowsWindowTextWidth(l->hwnd);
 	y = uiWindowsWindowTextHeight(l->hwnd);
 	uiWindowsGetSizing(l->hwnd, &sizing);
 	uiWindowsSizingDlgUnitsToPixels(&sizing, NULL, &y);
-	*height = y;
+	l->cached_height = y;
+}
+
+static void uiLabelMinimumSize(uiWindowsControl* c, int* width, int* height)
+{
+	uiLabel* l = uiLabel(c);
+	if (!l->cache_valid)
+	{
+		uiLabelMinimumSizeImpl(l);
+		l->cache_valid = true;
+	}
+
+	*width = l->cached_width;
+	*height = l->cached_height;
 }
 
 char *uiLabelText(uiLabel *l)
@@ -29,6 +44,7 @@ char *uiLabelText(uiLabel *l)
 void uiLabelSetText(uiLabel *l, const char *text)
 {
 	uiWindowsSetWindowText(l->hwnd, text);
+	l->cache_valid = false;
 	// changing the text might necessitate a change in the label's size
 	uiWindowsControlMinimumSizeChanged(uiWindowsControl(l));
 }
@@ -48,6 +64,7 @@ uiLabel *uiNewLabel(const char *text)
 		SS_LEFTNOWORDWRAP | SS_NOPREFIX,
 		hInstance, NULL,
 		TRUE);
+	l->cache_valid = false;
 	uiprivFree(wtext);
 
 	return l;

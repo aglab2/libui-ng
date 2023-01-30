@@ -6,6 +6,9 @@ struct uiButton {
 	HWND hwnd;
 	void (*onClicked)(uiButton *, void *);
 	void *onClickedData;
+	bool cache_valid;
+	int cached_width;
+	int cached_height;
 };
 
 static BOOL onWM_COMMAND(uiControl *c, HWND hwnd, WORD code, LRESULT *lResult)
@@ -33,9 +36,8 @@ uiWindowsControlAllDefaultsExceptDestroy(uiButton)
 // from http://msdn.microsoft.com/en-us/library/windows/desktop/dn742486.aspx#sizingandspacing
 #define buttonHeight 14
 
-static void uiButtonMinimumSize(uiWindowsControl *c, int *width, int *height)
+static void uiButtonMinimumSizeImpl(uiButton* b)
 {
-	uiButton *b = uiButton(c);
 	SIZE size;
 	uiWindowsSizing sizing;
 	int y;
@@ -43,20 +45,33 @@ static void uiButtonMinimumSize(uiWindowsControl *c, int *width, int *height)
 	// try the comctl32 version 6 way
 	size.cx = 0;		// explicitly ask for ideal size
 	size.cy = 0;
-	if (SendMessageW(b->hwnd, BCM_GETIDEALSIZE, 0, (LPARAM) (&size)) != FALSE) {
-		*width = size.cx;
-		*height = size.cy;
+	if (SendMessageW(b->hwnd, BCM_GETIDEALSIZE, 0, (LPARAM)(&size)) != FALSE) {
+		b->cached_width = size.cx;
+		b->cached_height = size.cy;
 		return;
 	}
 
 	// that didn't work; fall back to using Microsoft's metrics
 	// Microsoft says to use a fixed width for all buttons; this isn't good enough
 	// use the text width instead, with some edge padding
-	*width = uiWindowsWindowTextWidth(b->hwnd) + (2 * GetSystemMetrics(SM_CXEDGE));
+	b->cached_width = uiWindowsWindowTextWidth(b->hwnd) + (2 * GetSystemMetrics(SM_CXEDGE));
 	y = buttonHeight;
 	uiWindowsGetSizing(b->hwnd, &sizing);
 	uiWindowsSizingDlgUnitsToPixels(&sizing, NULL, &y);
-	*height = y;
+	b->cached_height = y;
+}
+
+static void uiButtonMinimumSize(uiWindowsControl *c, int *width, int *height)
+{
+	uiButton *b = uiButton(c);
+	if (!b->cache_valid)
+	{
+		uiButtonMinimumSizeImpl(b);
+		b->cache_valid = true;
+	}
+
+	*width = b->cached_width;
+	*height = b->cached_height;
 }
 
 static void defaultOnClicked(uiButton *b, void *data)
@@ -72,6 +87,7 @@ char *uiButtonText(uiButton *b)
 void uiButtonSetText(uiButton *b, const char *text)
 {
 	uiWindowsSetWindowText(b->hwnd, text);
+	b->cache_valid = false;
 	// changing the text might necessitate a change in the button's size
 	uiWindowsControlMinimumSizeChanged(uiWindowsControl(b));
 }
@@ -95,6 +111,7 @@ uiButton *uiNewButton(const char *text)
 		BS_PUSHBUTTON | WS_TABSTOP,
 		hInstance, NULL,
 		TRUE);
+	b->cache_valid = false;
 	uiprivFree(wtext);
 
 	uiWindowsRegisterWM_COMMANDHandler(b->hwnd, onWM_COMMAND, uiControl(b));
