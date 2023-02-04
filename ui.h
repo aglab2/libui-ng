@@ -481,6 +481,11 @@ _UI_EXTERN void uiWindowSetResizeable(uiWindow *w, int resizeable);
 #include <windows.h>
 _UI_EXTERN uiWindow *uiNewWindow(const char *title, int width, int height, int hasMenubar, HWND hWndParent);
 
+_UI_EXTERN void uiWindowSetKeyEvents(uiWindow* w, void (*WM_KeyDown)(void*, WPARAM, LPARAM), void (*WM_KeyUp)(void*, WPARAM, LPARAM), void* WM_KeyData);
+
+_UI_EXTERN HWND uiWindowGetHWND(uiWindow* w);
+
+_UI_EXTERN void uiWindowClose(uiWindow* window);
 
 /**
  * A control that visually represents a button to be clicked by the user to trigger an action.

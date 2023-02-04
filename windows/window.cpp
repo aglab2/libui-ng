@@ -25,6 +25,9 @@ struct uiWindow {
 	void *onContentSizeChangedData;
 	void (*onFocusChanged)(uiWindow *, void *);
 	void *onFocusChangedData;
+	void (*WM_KeyDown)(void*, WPARAM wParam, LPARAM lParam);
+	void (* WM_KeyUp)(void*, WPARAM wParam, LPARAM lParam);
+	void* WM_KeyData;
 };
 
 // from https://msdn.microsoft.com/en-us/library/windows/desktop/dn742486.aspx#sizingandspacing
@@ -132,8 +135,32 @@ static LRESULT CALLBACK windowWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARA
 		if ((*(w->onClosing))(w, w->onClosingData))
 			uiControlDestroy(uiControl(w));
 		return 0;		// we destroyed it already
+	case WM_KEYUP:
+		if (w->WM_KeyUp)
+		{
+			w->WM_KeyUp(w->WM_KeyData, wParam, lParam);
+		}
+		break;
+	case WM_KEYDOWN:
+		if (w->WM_KeyDown)
+		{
+			w->WM_KeyDown(w->WM_KeyData, wParam, lParam);
+		}
+		break;
 	}
 	return DefWindowProcW(hwnd, uMsg, wParam, lParam);
+}
+
+void uiWindowSetKeyEvents(uiWindow* w, void (*WM_KeyDown)(void*, WPARAM, LPARAM), void (*WM_KeyUp)(void*, WPARAM, LPARAM), void* WM_KeyData)
+{
+	w->WM_KeyDown = WM_KeyDown;
+	w->WM_KeyUp = WM_KeyUp;
+	w->WM_KeyData = WM_KeyData;
+}
+
+HWND uiWindowGetHWND(uiWindow* w)
+{
+	return w->hwnd;
 }
 
 ATOM registerWindowClass(HICON hDefaultIcon, HCURSOR hDefaultCursor)
@@ -503,6 +530,8 @@ uiWindow *uiNewWindow(const char *title, int width, int height, int hasMenubar, 
 
 	uiWindowsNewControl(uiWindow, w);
 
+	w->WM_KeyUp = nullptr;
+	w->WM_KeyDown = nullptr;
 	w->resizeable = TRUE;
 	hasMenubarBOOL = FALSE;
 	if (hasMenubar)
@@ -579,4 +608,9 @@ void enableAllWindowsExcept(uiWindow *which)
 			continue;
 		EnableWindow(w.first->hwnd, TRUE);
 	}
+}
+
+void uiWindowClose(uiWindow* window)
+{
+	PostMessage(window->hwnd, WM_CLOSE, 0, 0);
 }
