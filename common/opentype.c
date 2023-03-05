@@ -52,7 +52,7 @@ uiOpenTypeFeatures *uiOpenTypeFeaturesClone(const uiOpenTypeFeatures *otf)
 
 #define intdiff(a, b) (((int) (a)) - ((int) (b)))
 
-static int featurecmp(const void *a, const void *b)
+static int __cdecl featurecmp(const void *a, const void *b)
 {
 	const struct feature *f = (const struct feature *) a;
 	const struct feature *g = (const struct feature *) b;
